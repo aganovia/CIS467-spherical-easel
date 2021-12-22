@@ -3,8 +3,13 @@ import { Stylable } from "./Styleable";
 import { Resizeable } from "./Resizeable";
 import SETTINGS from "@/global-settings";
 import { StyleOptions, StyleEditPanels } from "@/types/Styles";
-import { hslaColorType, plottableProperties } from "@/types";
-import { Vector3 } from "three";
+import {
+  hslaColorType,
+  plottableProperties,
+  ProjectedEllipseData,
+  EllipsePosition
+} from "@/types";
+import { PositionalAudio, Vector3 } from "three";
 
 export enum DisplayStyle {
   ApplyTemporaryVariables,
@@ -41,6 +46,138 @@ export default abstract class Nodule implements Stylable, Resizeable {
     Nodule.idPlottableDescriptionMap.clear();
   }
 
+  /**
+   * @param unitNormal The unitNormal to the circle in the current view
+   * @param radius The radius of the circle 0<radius<pi
+   * @returns The data to create the projected ellipse
+   */
+  static projectedEllipseData(
+    unitNormal: Vector3,
+    radius: number
+  ): ProjectedEllipseData {
+    let centerX: number;
+    let centerY: number;
+    let tiltAngle: number;
+    let minorAxis: number; //half the minor diameter
+    let majorAxis: number; //half the major diameter
+    let position: EllipsePosition; // contained entirely in front/back or split
+    let positiveZStartAngle: number;
+    let positiveZEndAngle: number;
+    // First check to see if the unit normal is pointing directly at or away from the user, if so then the projection is a circle
+    if (
+      Math.abs(unitNormal.z - 1) < SETTINGS.tolerance ||
+      Math.abs(unitNormal.z + 1) < SETTINGS.tolerance
+    ) {
+      // All ellipse data is zero except the axes which are the radius of the projected circle.
+      minorAxis = Math.sin(radius);
+      majorAxis = minorAxis;
+      centerX = 0;
+      centerY = 0;
+      tiltAngle = 0;
+      // the projected ellipse is closed and contained entirely on either the front or the back
+      positiveZStartAngle = 0;
+      positiveZEndAngle = 0;
+      position =
+        unitNormal.z > 0
+          ? EllipsePosition.ContainedEntirelyOnFront
+          : EllipsePosition.ContainedEntirelyOnBack;
+    } else {
+      // both unitNormal.x and unitNormal.y can't be zero
+      centerX = unitNormal.x * Math.cos(radius);
+      centerY = unitNormal.y * Math.cos(radius);
+      majorAxis = Math.sin(radius);
+      // alpha is the angle between the unitNormal and z axis
+      const alpha = Math.acos(unitNormal.z);
+      minorAxis = Math.sin(radius) * Math.sin(Math.abs(Math.PI / 2 - alpha)); // Math.abs(Math.PI / 2 - alpha)) is the angle between the unit normal and the plane z=0
+      tiltAngle =
+        Math.abs(unitNormal.y) < SETTINGS.tolerance
+          ? Math.PI / 2
+          : Math.atan(-unitNormal.x / unitNormal.y);
+      // Now figure out if the circle intersects the plane z=0
+      if (
+        (radius < Math.PI / 2 &&
+          (alpha + radius < Math.PI / 2 || alpha - radius > Math.PI / 2)) ||
+        (radius > Math.PI / 2 &&
+          (radius - alpha > Math.PI / 2 ||
+            2 * Math.PI - alpha - radius < Math.PI / 2))
+      ) {
+        // there is no intersection with z=0, to signal this set both the positiveZStart/EndAngle to zero
+        // the projected ellipse is closed and contained entirely on either the front or the back
+        position =
+          unitNormal.z > 0
+            ? EllipsePosition.ContainedEntirelyOnFront
+            : EllipsePosition.ContainedEntirelyOnBack;
+        positiveZStartAngle = 0;
+        positiveZEndAngle = 0;
+      } else {
+        // there is an intersection with z=0
+        position = EllipsePosition.SplitBetweenFrontAndBack;
+
+        // the intersection points are the those between the line x*unitNormal.x+y*unitNormal.y=cos(radius) and x^2 + y^2 =1
+        if (Math.abs(unitNormal.y) < SETTINGS.tolerance) {
+          //unitNormal.y is zero, but unitNormal.x is not zero (because unitNormal.z is not 1)
+          // the intersection points are (X,+/-Y)
+          const X = Math.cos(radius) / unitNormal.x;
+          const Y = Math.sqrt(1 - X * X);
+          if (unitNormal.z > 0) {
+            positiveZStartAngle = Math.atan2(
+              Y - centerY,
+              X - centerX
+            ).modTwoPi();
+            positiveZEndAngle = Math.atan2(
+              -Y - centerY,
+              X - centerX
+            ).modTwoPi();
+          } else {
+            positiveZStartAngle = Math.atan2(
+              -Y - centerY,
+              X - centerX
+            ).modTwoPi();
+            positiveZEndAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
+          }
+        } else {
+          //unitNormal.y is not zero the intersection points are those between y=mx+b (m =-unitNormal.x/unitNormal.y, b = cos(radius)/unitNormal.y ) and x^2 + y^2 =1
+          // (X1,Y1) and (X2,Y2)
+          const m = unitNormal.x / unitNormal.y;
+          const b = Math.cos(radius) / unitNormal.y;
+          const X1 = (-m * b + Math.sqrt(m * m - b * b + 1)) / (1 + m * m);
+          const X2 = (-m * b - Math.sqrt(m * m - b * b + 1)) / (1 + m * m);
+          const Y1 = m * X1 + b;
+          const Y2 = m * X2 + b;
+          if (unitNormal.z > 0) {
+            positiveZStartAngle = Math.atan2(
+              Y1 - centerY,
+              X1 - centerX
+            ).modTwoPi();
+            positiveZEndAngle = Math.atan2(
+              Y2 - centerY,
+              X2 - centerX
+            ).modTwoPi();
+          } else {
+            positiveZStartAngle = Math.atan2(
+              Y2 - centerY,
+              X2 - centerX
+            ).modTwoPi();
+            positiveZEndAngle = Math.atan2(
+              Y1 - centerY,
+              X1 - centerX
+            ).modTwoPi();
+          }
+        }
+      }
+    }
+
+    return {
+      centerX: centerX,
+      centerY: centerY,
+      tiltAngle: tiltAngle,
+      minorAxis: minorAxis,
+      majorAxis: majorAxis,
+      position: position,
+      positiveZStartAngle: positiveZStartAngle,
+      positiveZEndAngle: positiveZEndAngle
+    };
+  }
   /**
    * Add various TwoJS (SVG) elements of this nodule to appropriate layers
    * @param {Two.Group[]} layers

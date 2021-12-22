@@ -488,3 +488,18 @@ export enum AngleMode {
   LINEANDSEGMENT,
   SEGMENTSORLINEANDSEGMENT
 }
+export interface ProjectedEllipseData {
+  centerX: number;
+  centerY: number;
+  tiltAngle: number;
+  minorAxis: number;
+  majorAxis: number;
+  position: EllipsePosition;
+  positiveZStartAngle: number;
+  positiveZEndAngle: number;
+}
+export enum EllipsePosition {
+  ContainedEntirelyOnFront,
+  SplitBetweenFrontAndBack,
+  ContainedEntirelyOnBack
+}

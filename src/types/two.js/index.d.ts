@@ -212,6 +212,8 @@ declare module "two.js" {
 
     export class Ellipse extends Path {
       constructor(x: number, y: number, width: number, height: number);
+      width: number;
+      height: number;
     }
 
     export class Star extends Path {
@@ -242,6 +244,10 @@ declare module "two.js" {
         ea: number,
         res?: number
       );
+      innerRadius: number;
+      outerRadius: number;
+      startAngle: number;
+      endAngle: number;
     }
 
     export class Group {

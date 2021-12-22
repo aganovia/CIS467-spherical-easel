@@ -340,6 +340,10 @@ export default class Segment extends Nodule {
         negIndex++;
       }
     }
+    // console.log("number of vertice", this._frontPart.vertices.length);
+    // for (let i = 0; i < this._frontPart.vertices.length; i++) {
+    //   console.log(this._frontPart.vertices[i].x, this._frontPart.vertices[i].y);
+    // }
   }
 
   /**

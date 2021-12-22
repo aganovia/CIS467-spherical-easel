@@ -141,7 +141,7 @@ export class SECircle extends SENodule
     }
 
     // These circles are completely determined by their point parents and an update on the parents
-    // will cause this circle to be put into the correct location.So we don't store any additional information
+    // will cause this circle to be put into the correct location so we don't store any additional information
     if (objectState && orderedSENoduleList) {
       if (objectState.has(this.id)) {
         console.log(

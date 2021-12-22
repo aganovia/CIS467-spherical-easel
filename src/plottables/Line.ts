@@ -8,9 +8,7 @@ import {
   DEFAULT_LINE_FRONT_STYLE,
   DEFAULT_LINE_BACK_STYLE
 } from "@/types/Styles";
-
-// The number of vectors used to render the front half (and the same number in the back half)
-const SUBDIVS = SETTINGS.line.numPoints;
+import { EllipsePosition } from "@/types";
 
 /**
  * A line segment
@@ -25,30 +23,18 @@ export default class Line extends Nodule {
 
   /**
    * NOTE: Once the above variable is set, the updateDisplay() will correctly render the line.
-   * This are the only piece of information that is need to do the rendering, so the updateDisplay() is automatically
-   * class when the setter is used to update the normal Vector All other
+   * This is the only piece of information that is need to do the rendering, so the updateDisplay() is automatically
+   * called when the setter is used to update the normal Vector. All other
    * calculations in this class are only for the purpose of rendering the line.
    */
 
   /**
    * A line has half on the front and half on the back.There are glowing counterparts for each part.
    */
-  protected frontHalf: Two.Path;
-  protected backHalf: Two.Path;
-  protected glowingFrontHalf: Two.Path;
-  protected glowingBackHalf: Two.Path;
-
-  // /**
-  //  * What are these for?
-  //  */
-  // private backArcLen = 0;
-  // private frontArcLen = 0;
-
-  /**
-   * A list of Vector3s that trace the the equator of the sphere
-   */
-
-  private points: Vector3[];
+  protected frontHalf: Two.Ellipse;
+  protected backHalf: Two.Ellipse;
+  protected glowingFrontHalf: Two.Ellipse;
+  protected glowingBackHalf: Two.Ellipse;
 
   /**
    * The styling variables for the drawn segment. The user can modify these.
@@ -85,24 +71,7 @@ export default class Line extends Nodule {
   constructor() {
     super();
 
-    const radius = SETTINGS.boundaryCircle.radius;
-    const vertices: Two.Vector[] = [];
-    const glowingVertices: Two.Vector[] = [];
-
-    // Generate 2D coordinates of a half circle
-    for (let k = 0; k < SUBDIVS; k++) {
-      const angle = (k * Math.PI) / SUBDIVS;
-      const px = radius * Math.cos(angle);
-      const py = radius * Math.sin(angle);
-      vertices.push(new Two.Vector(px, py));
-      glowingVertices.push(new Two.Vector(px, py));
-    }
-
-    this.frontHalf = new Two.Path(
-      vertices,
-      /* closed */ false,
-      /* curve */ false
-    );
+    this.frontHalf = new Two.Ellipse(0, 0, 0.5, 1, 20);
 
     // Create the back half, glowing front half, glowing back half circle by cloning the front half
     this.backHalf = this.frontHalf.clone();
@@ -129,26 +98,20 @@ export default class Line extends Nodule {
     this.glowingFrontHalf.visible = false;
     this.glowingBackHalf.visible = false;
 
-    // Set the style that never changes -- Fill
+    // Set the style that never changes -- Fill and closed
     this.frontHalf.noFill();
     this.glowingFrontHalf.noFill();
     this.backHalf.noFill();
     this.glowingBackHalf.noFill();
 
+    this.frontHalf.closed = false;
+    this.glowingFrontHalf.closed = false;
+    this.backHalf.closed = false;
+    this.glowingBackHalf.closed = false;
+
     // Be sure to clone() the incoming start and end points
     // Otherwise update by other Line will affect this one!
     this._normalVector = new Vector3();
-    // this.normalDirection.crossVectors(this.start, this.end);
-    // The back half will be dynamically added to the group
-
-    // Generate 3D coordinates of the entire line in a standard position -- the equator of the Default Sphere
-    this.points = [];
-    for (let k = 0; k < 2 * SUBDIVS; k++) {
-      const angle = (2 * k * Math.PI) / (2 * SUBDIVS);
-      const px = radius * Math.cos(angle);
-      const py = radius * Math.sin(angle);
-      this.points.push(new Vector3(px, py, 0));
-    }
 
     this.styleOptions.set(StyleEditPanels.Front, DEFAULT_LINE_FRONT_STYLE);
     this.styleOptions.set(StyleEditPanels.Back, DEFAULT_LINE_BACK_STYLE);
@@ -192,79 +155,53 @@ export default class Line extends Nodule {
    * call this method once that vector is updated.
    */
   public updateDisplay(): void {
-    //Form the X Axis perpendicular to the normalDirection, this is where the plotting will start.
-    this.desiredXAxis
-      .set(-this._normalVector.y, this._normalVector.x, 0)
-      .normalize();
-
-    // Form the Y axis perpendicular to the normal vector and the XAxis
-    this.desiredYAxis.crossVectors(this._normalVector, this.desiredXAxis)
-      .normalize;
-    // Form the transformation matrix that will map the vectors along the equation of the Default Sphere to
-    // to the current position of the line.
-    this.transformMatrix.makeBasis(
-      this.desiredXAxis,
-      this.desiredYAxis,
-      this._normalVector
+    const projectedEllipseData = Nodule.projectedEllipseData(
+      this._normalVector, // When the radius is pi/2, either normal vector (ie. multiply this one by -1) will result in the same data
+      Math.PI / 2 // the radius of a line is always Pi/2
     );
-
-    // Variables to keep track of when the z coordinate of the transformed object changes sign
-    let firstPos = -1;
-    let posIndex = 0;
-    let firstNeg = -1;
-    let negIndex = 0;
-    let lastSign = 0;
-
-    this.points.forEach((v, pos) => {
-      // v is a vector location on the equator of the Default Sphere
-      this.tmpVector.copy(v);
-      // Transform that vector to one on the current segment
-      this.tmpVector.applyMatrix4(this.transformMatrix);
-      const thisSign = Math.sign(this.tmpVector.z);
-      if (lastSign !== thisSign) {
-        // We have a zero crossing
-        if (thisSign > 0) firstPos = pos;
-        if (thisSign < 0) firstNeg = pos;
-      }
-      lastSign = thisSign;
-      if (this.tmpVector.z > 0) {
-        if (posIndex === this.frontHalf.vertices.length) {
-          let extra: Two.Anchor | undefined;
-          extra = this.backHalf.vertices.pop();
-          if (extra) this.frontHalf.vertices.push(extra);
-          extra = this.glowingBackHalf.vertices.pop();
-          if (extra) this.glowingFrontHalf.vertices.push(extra);
-        }
-        this.frontHalf.vertices[posIndex].x = this.tmpVector.x;
-        this.frontHalf.vertices[posIndex].y = this.tmpVector.y;
-        this.glowingFrontHalf.vertices[posIndex].x = this.tmpVector.x;
-        this.glowingFrontHalf.vertices[posIndex].y = this.tmpVector.y;
-        posIndex++;
-      } else {
-        if (negIndex === this.backHalf.vertices.length) {
-          let extra: Two.Anchor | undefined;
-          extra = this.frontHalf.vertices.pop();
-          if (extra) this.backHalf.vertices.push(extra);
-          extra = this.glowingFrontHalf.vertices.pop();
-          if (extra) this.glowingBackHalf.vertices.push(extra);
-        }
-        this.backHalf.vertices[negIndex].x = this.tmpVector.x;
-        this.backHalf.vertices[negIndex].y = this.tmpVector.y;
-        this.glowingBackHalf.vertices[negIndex].x = this.tmpVector.x;
-        this.glowingBackHalf.vertices[negIndex].y = this.tmpVector.y;
-        negIndex++;
-      }
-    });
-    if (0 < firstPos && firstPos < SUBDIVS) {
-      // Gap in backhalf
-      this.backHalf.vertices.rotate(firstPos);
-      this.glowingBackHalf.vertices.rotate(firstPos);
+    console.log(projectedEllipseData);
+    // console.log(
+    //   this._normalVector.x,
+    //   this._normalVector.y,
+    //   this._normalVector.z
+    // );
+    if (
+      projectedEllipseData.position != EllipsePosition.SplitBetweenFrontAndBack
+    ) {
+      console.error("Failure Projecting Line To z=0");
     }
-    if (0 < firstNeg && firstNeg < SUBDIVS) {
-      // Gap in fronthalf
-      this.frontHalf.vertices.rotate(firstNeg);
-      this.glowingFrontHalf.vertices.rotate(firstNeg);
-    }
+    // no need to update the center of the ellipse because for lines it is always (0,0)
+    this.frontHalf.width =
+      2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
+    this.frontHalf.height =
+      2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
+    this.frontHalf.beginning = 0; //projectedEllipseData.positiveZStartAngle;
+    this.frontHalf.ending = 0.5; //2 * Math.PI; // projectedEllipseData.positiveZEndAngle;
+    this.frontHalf.rotation = projectedEllipseData.tiltAngle;
+
+    this.glowingFrontHalf.width =
+      2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
+    this.glowingFrontHalf.height =
+      2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
+    this.glowingFrontHalf.beginning = 0; // projectedEllipseData.positiveZStartAngle;
+    this.glowingFrontHalf.ending = 0.5; //projectedEllipseData.positiveZEndAngle;
+    this.glowingFrontHalf.rotation = projectedEllipseData.tiltAngle;
+
+    this.backHalf.width =
+      2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
+    this.backHalf.height =
+      2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
+    this.backHalf.beginning = 0.5; //projectedEllipseData.positiveZEndAngle; //notice the switch in start/end angle
+    this.backHalf.ending = 1.0; //projectedEllipseData.positiveZStartAngle; //notice the switch in start/end angle
+    this.backHalf.rotation = projectedEllipseData.tiltAngle;
+
+    this.glowingBackHalf.width =
+      2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
+    this.glowingBackHalf.height =
+      2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
+    this.glowingBackHalf.beginning = 0.5; //projectedEllipseData.positiveZEndAngle;
+    this.glowingBackHalf.ending = 1.0; //projectedEllipseData.positiveZStartAngle;
+    this.glowingBackHalf.rotation = projectedEllipseData.tiltAngle;
   }
 
   /**
@@ -304,22 +241,33 @@ export default class Line extends Nodule {
   clone(): this {
     const dup = new Line();
     dup._normalVector.copy(this._normalVector);
+
+    // no need to copy the center, it is always (0,0)
+
     dup.frontHalf.rotation = this.frontHalf.rotation;
+    dup.frontHalf.width = this.frontHalf.width;
+    dup.frontHalf.height = this.frontHalf.height;
+    dup.frontHalf.beginning = this.frontHalf.beginning;
+    dup.frontHalf.ending = this.frontHalf.ending;
+
+    dup.glowingFrontHalf.rotation = this.glowingFrontHalf.rotation;
+    dup.glowingFrontHalf.width = this.glowingFrontHalf.width;
+    dup.glowingFrontHalf.height = this.glowingFrontHalf.height;
+    dup.glowingFrontHalf.beginning = this.glowingFrontHalf.beginning;
+    dup.glowingFrontHalf.ending = this.glowingFrontHalf.ending;
+
     dup.backHalf.rotation = this.backHalf.rotation;
-    // dup.frontArcLen = this.frontArcLen;
-    // dup.backArcLen = this.backArcLen;
-    dup.frontHalf.vertices.forEach((v, pos) => {
-      v.copy(this.frontHalf.vertices[pos]);
-    });
-    dup.backHalf.vertices.forEach((v, pos) => {
-      v.copy(this.backHalf.vertices[pos]);
-    });
-    dup.glowingFrontHalf.vertices.forEach((v, pos) => {
-      v.copy(this.glowingFrontHalf.vertices[pos]);
-    });
-    dup.glowingBackHalf.vertices.forEach((v, pos) => {
-      v.copy(this.glowingBackHalf.vertices[pos]);
-    });
+    dup.backHalf.width = this.backHalf.width;
+    dup.backHalf.height = this.backHalf.height;
+    dup.backHalf.beginning = this.backHalf.beginning;
+    dup.backHalf.ending = this.backHalf.ending;
+
+    dup.glowingBackHalf.rotation = this.glowingBackHalf.rotation;
+    dup.glowingBackHalf.width = this.glowingBackHalf.width;
+    dup.glowingBackHalf.height = this.glowingBackHalf.height;
+    dup.glowingBackHalf.beginning = this.glowingBackHalf.beginning;
+    dup.glowingBackHalf.ending = this.glowingBackHalf.ending;
+
     return dup as this;
   }
 
