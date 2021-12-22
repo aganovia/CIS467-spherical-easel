@@ -459,12 +459,12 @@ export default class SphereFrame extends VueComponent {
       Command.commandHistory[commandStackLength - 1] instanceof
       ZoomSphereCommand
     ) {
-      (Command.commandHistory[
-        commandStackLength - 1
-      ] as ZoomSphereCommand).setMagnificationFactor = newMagFactor;
-      (Command.commandHistory[
-        commandStackLength - 1
-      ] as ZoomSphereCommand).setTranslationVector = newTranslationVector;
+      (
+        Command.commandHistory[commandStackLength - 1] as ZoomSphereCommand
+      ).setMagnificationFactor = newMagFactor;
+      (
+        Command.commandHistory[commandStackLength - 1] as ZoomSphereCommand
+      ).setTranslationVector = newTranslationVector;
     } else {
       // Store the zoom as a command that can be undone or redone
       const zoomCommand = new ZoomSphereCommand(

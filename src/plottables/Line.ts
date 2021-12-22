@@ -71,7 +71,7 @@ export default class Line extends Nodule {
   constructor() {
     super();
 
-    this.frontHalf = new Two.Ellipse(0, 0, 0.5, 1, 20);
+    this.frontHalf = new Two.Ellipse(0, 0, 50, 100);
 
     // Create the back half, glowing front half, glowing back half circle by cloning the front half
     this.backHalf = this.frontHalf.clone();
@@ -159,7 +159,7 @@ export default class Line extends Nodule {
       this._normalVector, // When the radius is pi/2, either normal vector (ie. multiply this one by -1) will result in the same data
       Math.PI / 2 // the radius of a line is always Pi/2
     );
-    console.log(projectedEllipseData);
+    //console.log(projectedEllipseData);
     // console.log(
     //   this._normalVector.x,
     //   this._normalVector.y,
@@ -406,7 +406,8 @@ export default class Line extends Nodule {
         if (Nodule.hlsaIsNoFillOrNoStroke(frontStyle?.strokeColor)) {
           this.frontHalf.noStroke();
         } else {
-          this.frontHalf.stroke = (frontStyle?.strokeColor ?? "black") as Color;
+          this.frontHalf.stroke = (frontStyle?.strokeColor ??
+            "black") as Two.Color;
         }
         // strokeWidthPercent applied by adjustSize()
 
@@ -445,7 +446,7 @@ export default class Line extends Nodule {
           if (Nodule.hlsaIsNoFillOrNoStroke(backStyle?.strokeColor)) {
             this.backHalf.noStroke();
           } else {
-            this.backHalf.stroke = backStyle?.strokeColor as Color;
+            this.backHalf.stroke = backStyle?.strokeColor as Two.Color;
           }
         }
         // strokeWidthPercent applied by adjustSize()
