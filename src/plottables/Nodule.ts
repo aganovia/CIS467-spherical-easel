@@ -121,19 +121,20 @@ export default abstract class Nodule implements Stylable, Resizeable {
           const Y = Math.sqrt(1 - X * X);
           if (unitNormal.z > 0) {
             positiveZStartAngle = Math.atan2(
-              Y - centerY,
-              X - centerX
+              centerY-Y,
+              centerX-X
             ).modTwoPi();
             positiveZEndAngle = Math.atan2(
-              -Y - centerY,
-              X - centerX
+              centerY+Y,
+              centerX-X
             ).modTwoPi();
           } else {
             positiveZStartAngle = Math.atan2(
-              -Y - centerY,
-              X - centerX
+              centerY+Y,
+              centerX-X
             ).modTwoPi();
-            positiveZEndAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
+            positiveZEndAngle = Math.atan2( centerY-Y,
+              centerX-X).modTwoPi();
           }
         } else {
           //unitNormal.y is not zero the intersection points are those between y=mx+b (m =-unitNormal.x/unitNormal.y, b = cos(radius)/unitNormal.y ) and x^2 + y^2 =1
@@ -146,21 +147,21 @@ export default abstract class Nodule implements Stylable, Resizeable {
           const Y2 = m * X2 + b;
           if (unitNormal.z > 0) {
             positiveZStartAngle = Math.atan2(
-              Y1 - centerY,
-              X1 - centerX
+              centerY-Y1,
+              centerX-X1
             ).modTwoPi();
             positiveZEndAngle = Math.atan2(
-              Y2 - centerY,
-              X2 - centerX
+              centerY-Y2,
+              centerX-X2
             ).modTwoPi();
           } else {
             positiveZStartAngle = Math.atan2(
-              Y2 - centerY,
-              X2 - centerX
+              centerY-Y2,
+              centerX-X2
             ).modTwoPi();
             positiveZEndAngle = Math.atan2(
-              Y1 - centerY,
-              X1 - centerX
+              centerY-Y1,
+              centerX-X1
             ).modTwoPi();
           }
         }

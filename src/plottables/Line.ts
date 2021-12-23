@@ -71,12 +71,13 @@ export default class Line extends Nodule {
   constructor() {
     super();
 
-    this.frontHalf = new Two.Ellipse(0, 0, 50, 100);
+    this.frontHalf = new Two.Ellipse(0, 0, 50, 100, 10);
 
-    // Create the back half, glowing front half, glowing back half circle by cloning the front half
-    this.backHalf = this.frontHalf.clone();
-    this.glowingBackHalf = this.frontHalf.clone();
-    this.glowingFrontHalf = this.frontHalf.clone();
+    // Create the back half, glowing front half, glowing back half circle
+    // Don't clone because the resolution drops when you clone. Each ellipse needs a higher resolution than the default of 4
+    this.backHalf = new Two.Ellipse(0, 0, 50, 100, 10);
+    this.glowingBackHalf = new Two.Ellipse(0, 0, 50, 100, 10);
+    this.glowingFrontHalf = new Two.Ellipse(0, 0, 50, 100, 10);
 
     //Record the path ids for all the TwoJS objects which are not glowing. This is for use in IconBase to create icons.
     Nodule.idPlottableDescriptionMap.set(String(this.frontHalf.id), {
@@ -159,7 +160,7 @@ export default class Line extends Nodule {
       this._normalVector, // When the radius is pi/2, either normal vector (ie. multiply this one by -1) will result in the same data
       Math.PI / 2 // the radius of a line is always Pi/2
     );
-    //console.log(projectedEllipseData);
+    console.log(projectedEllipseData);
     // console.log(
     //   this._normalVector.x,
     //   this._normalVector.y,
@@ -175,8 +176,8 @@ export default class Line extends Nodule {
       2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
     this.frontHalf.height =
       2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
-    this.frontHalf.beginning = 0; //projectedEllipseData.positiveZStartAngle;
-    this.frontHalf.ending = 0.5; //2 * Math.PI; // projectedEllipseData.positiveZEndAngle;
+    this.frontHalf.beginning =0 //this._normalVector.z > 0? 0.5: 0;
+    this.frontHalf.ending =0.5 //this._normalVector.z > 0? 1.0: 0.5;
     this.frontHalf.rotation = projectedEllipseData.tiltAngle;
 
     this.glowingFrontHalf.width =
@@ -191,8 +192,8 @@ export default class Line extends Nodule {
       2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
     this.backHalf.height =
       2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
-    this.backHalf.beginning = 0.5; //projectedEllipseData.positiveZEndAngle; //notice the switch in start/end angle
-    this.backHalf.ending = 1.0; //projectedEllipseData.positiveZStartAngle; //notice the switch in start/end angle
+    this.backHalf.beginning = 0.5//this._normalVector.z > 0? 0: 0.5;
+    this.backHalf.ending = 1 //this._normalVector.z > 0? 0.5: 1.0;
     this.backHalf.rotation = projectedEllipseData.tiltAngle;
 
     this.glowingBackHalf.width =
