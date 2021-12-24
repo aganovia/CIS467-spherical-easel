@@ -52,7 +52,8 @@ declare module "two.js" {
       x: number,
       y: number,
       width: number,
-      height: number
+      height: number,
+      res?: number
     ): Two.Ellipse;
     makeStar(
       ox: number,
@@ -211,7 +212,13 @@ declare module "two.js" {
     }
 
     export class Ellipse extends Path {
-      constructor(x: number, y: number, width: number, height: number);
+      constructor(
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        res?: number
+      );
       width: number;
       height: number;
     }

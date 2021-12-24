@@ -49,20 +49,20 @@ export default abstract class Nodule implements Stylable, Resizeable {
   /**
    * @param unitNormal The unitNormal to the circle in the current view
    * @param radius The radius of the circle 0<radius<pi
-   * @returns The data to create the projected ellipse
+   * @returns The data to create the projected ellipse from the circle with center unitNormal and radius radius
    */
   static projectedEllipseData(
     unitNormal: Vector3,
     radius: number
   ): ProjectedEllipseData {
-    let centerX: number;
-    let centerY: number;
-    let tiltAngle: number;
-    let minorAxis: number; //half the minor diameter
-    let majorAxis: number; //half the major diameter
+    let centerX: number; // the center of the ellipse
+    let centerY: number; // the center of the ellipse
+    let tiltAngle: number; // between -Pi/2 and pi/2, the angle between the line containing the major axis (after tilting) and the x axis
+    let minorAxis: number; //half the minor diameter parallel to the y axis (prior to tilting)
+    let majorAxis: number; //half the major diameter parallel to thee x axis (prior to tilting)
     let position: EllipsePosition; // contained entirely in front/back or split
-    let positiveZStartAngle: number;
-    let positiveZEndAngle: number;
+    let frontStartAngle: number; // To trace the part of the ellipse that is on the front start with this angle and end with the other.
+    let frontEndAngle: number;
     // First check to see if the unit normal is pointing directly at or away from the user, if so then the projection is a circle
     if (
       Math.abs(unitNormal.z - 1) < SETTINGS.tolerance ||
@@ -75,14 +75,14 @@ export default abstract class Nodule implements Stylable, Resizeable {
       centerY = 0;
       tiltAngle = 0;
       // the projected ellipse is closed and contained entirely on either the front or the back
-      positiveZStartAngle = 0;
-      positiveZEndAngle = 0;
+      frontStartAngle = 0;
+      frontEndAngle = 0;
       position =
         unitNormal.z > 0
           ? EllipsePosition.ContainedEntirelyOnFront
           : EllipsePosition.ContainedEntirelyOnBack;
     } else {
-      // both unitNormal.x and unitNormal.y can't be zero
+      // both unitNormal.x and unitNormal.y can't be zero as unitNormal.z is not one or minus one
       centerX = unitNormal.x * Math.cos(radius);
       centerY = unitNormal.y * Math.cos(radius);
       majorAxis = Math.sin(radius);
@@ -92,9 +92,48 @@ export default abstract class Nodule implements Stylable, Resizeable {
       tiltAngle =
         Math.abs(unitNormal.y) < SETTINGS.tolerance
           ? Math.PI / 2
-          : Math.atan(-unitNormal.x / unitNormal.y);
+          : Math.atan(-unitNormal.x / unitNormal.y); // The tilt axis (i.e. the line containing the major axis) is perpendicular to the projection of the normal vector into the x,y plane (this explains the minus sign)
       // Now figure out if the circle intersects the plane z=0
-      if (
+      if (Math.abs(radius - Math.PI / 2) < SETTINGS.tolerance) {
+        //the circle is a line and must intersect z=0.
+        position = EllipsePosition.SplitBetweenFrontAndBack;
+        // the normal can point in either direction so it (by itself) is a bad way to figure out the front/positive start/end angel
+        // determine a point on the line that projects to the part of the ellipse that should be on the front
+        // Pick the highest point, the point on the line that is furthest from the z=0 plane.
+
+        // unit normal is perpendicular to the plane of the line
+        // z hat (0,0,1) cross unit normal is perpendicular to the plane containing the z hat and N vectors
+        // so
+        //     tmpVector = ((0,0,1) cross unit normal) cross unit normal
+        // is a vector in the direction of the line of intersection of the
+        // two planes. This unit vector in the direction of tmpVector with a positive z coordinate is the hightpoint
+        tmpVector.set(0, 0, 1).cross(unitNormal).cross(unitNormal);
+        if (tmpVector.z < 0) {
+          tmpVector.multiplyScalar(-1);
+        }
+        // tmpVector is now the highest point on the line, which means that
+        // tmpVector.x, tmpVector.y is a point on the ellipse that should correspond to the front
+        // this point is either above or below the line at tilt angle to the x axis (y = tan(tiltAngle)*x)
+        // if above then front is from 0 to Math.PI, if below front is from Math.PI to 2*Math.PI
+        if (Math.tan(tiltAngle) * tmpVector.x < tmpVector.y) {
+          console.log(
+            "the tmpVector is above the line",
+            tmpVector.x,
+            tmpVector.y
+          );
+          frontStartAngle = 0;
+          frontEndAngle = Math.PI;
+        } else {
+          console.log(
+            "the tmpVector is below the line",
+            tmpVector.x,
+            tmpVector.y
+          );
+          frontStartAngle = Math.PI;
+          frontEndAngle = 2 * Math.PI;
+        }
+      } // Now handle the circle (non-line) case
+      else if (
         (radius < Math.PI / 2 &&
           (alpha + radius < Math.PI / 2 || alpha - radius > Math.PI / 2)) ||
         (radius > Math.PI / 2 &&
@@ -107,8 +146,8 @@ export default abstract class Nodule implements Stylable, Resizeable {
           unitNormal.z > 0
             ? EllipsePosition.ContainedEntirelyOnFront
             : EllipsePosition.ContainedEntirelyOnBack;
-        positiveZStartAngle = 0;
-        positiveZEndAngle = 0;
+        frontStartAngle = 0;
+        frontEndAngle = 0;
       } else {
         // there is an intersection with z=0
         position = EllipsePosition.SplitBetweenFrontAndBack;
@@ -120,49 +159,36 @@ export default abstract class Nodule implements Stylable, Resizeable {
           const X = Math.cos(radius) / unitNormal.x;
           const Y = Math.sqrt(1 - X * X);
           if (unitNormal.z > 0) {
-            positiveZStartAngle = Math.atan2(
-              centerY-Y,
-              centerX-X
-            ).modTwoPi();
-            positiveZEndAngle = Math.atan2(
-              centerY+Y,
-              centerX-X
-            ).modTwoPi();
+            frontStartAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
+            frontEndAngle = Math.atan2(-Y - centerY, X - centerX).modTwoPi();
           } else {
-            positiveZStartAngle = Math.atan2(
-              centerY+Y,
-              centerX-X
-            ).modTwoPi();
-            positiveZEndAngle = Math.atan2( centerY-Y,
-              centerX-X).modTwoPi();
+            frontStartAngle = Math.atan2(-Y - centerY, X - centerX).modTwoPi();
+            frontEndAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
           }
         } else {
           //unitNormal.y is not zero the intersection points are those between y=mx+b (m =-unitNormal.x/unitNormal.y, b = cos(radius)/unitNormal.y ) and x^2 + y^2 =1
           // (X1,Y1) and (X2,Y2)
-          const m = unitNormal.x / unitNormal.y;
+          // Make sure that the ellipse is traced counterclockwise when seen from above.
+          const m = -unitNormal.x / unitNormal.y;
           const b = Math.cos(radius) / unitNormal.y;
-          const X1 = (-m * b + Math.sqrt(m * m - b * b + 1)) / (1 + m * m);
-          const X2 = (-m * b - Math.sqrt(m * m - b * b + 1)) / (1 + m * m);
+          const X1 = (-m * b - Math.sqrt(m * m - b * b + 1)) / (1 + m * m);
+          const X2 = (-m * b + Math.sqrt(m * m - b * b + 1)) / (1 + m * m);
           const Y1 = m * X1 + b;
           const Y2 = m * X2 + b;
+          const leftMostAngle = Math.atan2(
+            Y1 - centerY,
+            X1 - centerX
+          ).modTwoPi();
+          const rightMostAngle = Math.atan2(
+            Y2 - centerY,
+            X2 - centerX
+          ).modTwoPi();
           if (unitNormal.z > 0) {
-            positiveZStartAngle = Math.atan2(
-              centerY-Y1,
-              centerX-X1
-            ).modTwoPi();
-            positiveZEndAngle = Math.atan2(
-              centerY-Y2,
-              centerX-X2
-            ).modTwoPi();
+            frontStartAngle = leftMostAngle;
+            frontEndAngle = rightMostAngle;
           } else {
-            positiveZStartAngle = Math.atan2(
-              centerY-Y2,
-              centerX-X2
-            ).modTwoPi();
-            positiveZEndAngle = Math.atan2(
-              centerY-Y1,
-              centerX-X1
-            ).modTwoPi();
+            frontStartAngle = rightMostAngle;
+            frontEndAngle = leftMostAngle;
           }
         }
       }
@@ -175,9 +201,108 @@ export default abstract class Nodule implements Stylable, Resizeable {
       minorAxis: minorAxis,
       majorAxis: majorAxis,
       position: position,
-      positiveZStartAngle: positiveZStartAngle,
-      positiveZEndAngle: positiveZEndAngle
+      frontStartAngle: frontStartAngle,
+      frontEndAngle: frontEndAngle
     };
+  }
+  /**
+   *The ellipse is parameterized by x= a cos(t), y = b sin(t) for 0<=t<=2Pi
+   * @param a The axis length (half a diameter) along the x axis of the ellipse
+   * @param b The axis length (half a diameter) along the y axis of the ellipse
+   * @param angle The angle between 0 and 2pi from the positive  x axis
+   * Returns the percent of the total ellipse circumference corresponding to angle. That is
+   * angle =     0 returns 0
+   * angle =  Pi/2 returns 0.25
+   * angle =    Pi returns 0.5
+   * angle = 3Pi/2 returns 0.75
+   * angle =   2Pi returns 1
+   * But the return is *NOT* linear in between for example for
+   * https://www.desmos.com/calculator/yppxbh45py
+   * shows that for a=2, b= 10
+   * angle Pi/4 returns about  0.0466842423886
+   * NOTE: angle is *NOT* the same as the t parameter!
+   */
+  static convertEllipseAngleToPercent(
+    a: number,
+    b: number,
+    angle: number
+  ): number {
+    // Check that angle is between 0 and 2PI
+    if (
+      angle < -SETTINGS.tolerance ||
+      angle >= 2 * Math.PI + SETTINGS.tolerance
+    ) {
+      console.error("Ellipse Angle is negative or bigger than 2pi");
+      return 0;
+    }
+
+    // first estimate the total arc length of the ellipse based on Series 2 of
+    // https://www.mathsisfun.com/geometry/ellipse-perimeter.html
+    const h = ((a - b) * (a - b)) / ((a + b) * (a + b));
+    const perimeter =
+      Math.PI *
+      (a + b) *
+      (1 +
+        h / 4 +
+        (h * h) / 64 +
+        (h * h * h) / 256 +
+        (25 * h * h * h * h) / 16384 +
+        (49 * h * h * h * h * h) / 65536 +
+        (441 * h * h * h * h * h * h) / 1048576);
+    // now we have to figure out the arc length along the ellipse from (a,0) to (a*cos(t),b*sin(t))
+    // where the angle from the positive x axis to (a*cos(t),b*sin(t)) is angle
+    // We can restrict to 0<=angle<= Pi/2 because
+    // for pi/2 < angle <= pi the return is 0.5 - convertEllipseAngleToPercent(pi-angle)
+    // for pi<angle<=3*pi/2 the return is 0.5+ convertEllipseAngleToPercent(angle -pi)
+    // for 3*pi/2 < angle < 2pi the return is 1- convertEllipseAngleToPercent(2*pi-angle)
+    //console.log("perimeter", a, b, perimeter);
+    let reducedAngle = 0;
+    if (0 <= angle && angle <= Math.PI / 2) {
+      reducedAngle = angle;
+    } else if (Math.PI / 2 < angle && angle <= Math.PI) {
+      reducedAngle = Math.PI - angle;
+    } else if (Math.PI < angle && angle <= (3 * Math.PI) / 2) {
+      reducedAngle = angle - Math.PI;
+    } else if ((3 * Math.PI) / 2 < angle && angle <= 2 * Math.PI) {
+      reducedAngle = 2 * Math.PI - angle;
+    }
+
+    // Now that reduced angle is between 0 and pi/2, find the corresponding t value
+    // That is, find t where x= a cos(t), y = b sin(t) for 0<=t<=Pi/2 is at reduced angle to positive x axis
+    const tVal = Math.atan((a / b) * Math.tan(reducedAngle));
+    //console.log("angle/tVal", reducedAngle, tVal);
+
+    //Now compute the arc length from 0 to tVal of the Ellipse.
+    let arcLength = 0;
+    //Estimate int_0^tVal sqrt(x'(t)^2+y'(t)) dt using Simpson's rule
+    const N = 10; // number of divisions, must be even
+    const deltaX = tVal / N; // Width of each sub interval
+    function f(x: number): number {
+      return Math.sqrt(
+        a * a * Math.sin(x) * Math.sin(x) + b * b * Math.cos(x) * Math.cos(x)
+      );
+    }
+    arcLength = f(0) + 4 * f(deltaX);
+    for (let i = 2; i <= N - 2; i++) {
+      arcLength += (2 * ((i + 1) % 2) + 2) * f(deltaX * i); //i odd coeff is 2, i even coeff is 4
+    }
+    arcLength += 4 * f(deltaX * (N - 1)) + f(deltaX * N);
+    arcLength *= deltaX / 3;
+
+    //console.log("arclength", a, b, arcLength);
+
+    let returnPercent = 0;
+    if (0 <= angle && angle <= Math.PI / 2) {
+      returnPercent = arcLength / perimeter;
+    } else if (Math.PI / 2 < angle && angle <= Math.PI) {
+      returnPercent = 0.5 - arcLength / perimeter;
+    } else if (Math.PI < angle && angle <= (3 * Math.PI) / 2) {
+      returnPercent = 0.5 + arcLength / perimeter;
+    } else if ((3 * Math.PI) / 2 < angle && angle <= 2 * Math.PI) {
+      returnPercent = 1 - arcLength / perimeter;
+    }
+
+    return returnPercent;
   }
   /**
    * Add various TwoJS (SVG) elements of this nodule to appropriate layers

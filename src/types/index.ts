@@ -489,14 +489,14 @@ export enum AngleMode {
   SEGMENTSORLINEANDSEGMENT
 }
 export interface ProjectedEllipseData {
-  centerX: number;
-  centerY: number;
-  tiltAngle: number;
-  minorAxis: number;
-  majorAxis: number;
-  position: EllipsePosition;
-  positiveZStartAngle: number;
-  positiveZEndAngle: number;
+  centerX: number; // the center of the ellipse
+  centerY: number; // the center of the ellipse
+  tiltAngle: number; // between -Pi/2 and pi/2, the angle between the line containing the major axis (after tilting) and the x axis
+  minorAxis: number; //half the minor diameter parallel to the y axis (prior to tilting)
+  majorAxis: number; //half the major diameter parallel to thee x axis (prior to tilting)
+  position: EllipsePosition; // contained entirely in front/back or split
+  frontStartAngle: number; // To trace the part of the ellipse that is on the front start with this angle and end with the other.
+  frontEndAngle: number;
 }
 export enum EllipsePosition {
   ContainedEntirelyOnFront,

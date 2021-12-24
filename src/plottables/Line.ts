@@ -71,13 +71,13 @@ export default class Line extends Nodule {
   constructor() {
     super();
 
-    this.frontHalf = new Two.Ellipse(0, 0, 50, 100, 10);
+    this.frontHalf = new Two.Ellipse(0, 0, 50, 100, 20);
 
     // Create the back half, glowing front half, glowing back half circle
     // Don't clone because the resolution drops when you clone. Each ellipse needs a higher resolution than the default of 4
-    this.backHalf = new Two.Ellipse(0, 0, 50, 100, 10);
-    this.glowingBackHalf = new Two.Ellipse(0, 0, 50, 100, 10);
-    this.glowingFrontHalf = new Two.Ellipse(0, 0, 50, 100, 10);
+    this.backHalf = new Two.Ellipse(0, 0, 50, 100, 20);
+    this.glowingBackHalf = new Two.Ellipse(0, 0, 50, 100, 20);
+    this.glowingFrontHalf = new Two.Ellipse(0, 0, 50, 100, 20);
 
     //Record the path ids for all the TwoJS objects which are not glowing. This is for use in IconBase to create icons.
     Nodule.idPlottableDescriptionMap.set(String(this.frontHalf.id), {
@@ -160,48 +160,113 @@ export default class Line extends Nodule {
       this._normalVector, // When the radius is pi/2, either normal vector (ie. multiply this one by -1) will result in the same data
       Math.PI / 2 // the radius of a line is always Pi/2
     );
-    console.log(projectedEllipseData);
+    //console.log(projectedEllipseData);
+    // console.log("tilt angle", projectedEllipseData.tiltAngle);
+    // console.log("start angle", projectedEllipseData.frontStartAngle);
+    // console.log("end angle", projectedEllipseData.frontEndAngle);
     // console.log(
-    //   this._normalVector.x,
-    //   this._normalVector.y,
-    //   this._normalVector.z
+    //   "2, 10, pi/4 percent",
+    //   Nodule.convertEllipseAngleToPercent(2, 10, Math.PI / 4)
     // );
-    if (
-      projectedEllipseData.position != EllipsePosition.SplitBetweenFrontAndBack
-    ) {
-      console.error("Failure Projecting Line To z=0");
-    }
+    // console.log("unit normal z", this._normalVector.z);
+
     // no need to update the center of the ellipse because for lines it is always (0,0)
+
+    // For lines the start angle is 0 or pi (NOTE: this is before rotating)
+    // Convert these to percents
+    let frontStart = 0;
+    let frontEnd = 0;
+    let backStart = 0;
+    let backEnd = 0;
+    if (projectedEllipseData.frontStartAngle < SETTINGS.tolerance) {
+      //console.log("front is 0 to 0.5   #1");
+      frontStart = 0;
+      frontEnd = 0.5;
+      backStart = 0.5;
+      backEnd = 1;
+    } else {
+      //console.log("front is 0.5 to 1   #2");
+      backStart = 0;
+      backEnd = 0.5;
+      frontStart = 0.5;
+      frontEnd = 1;
+    }
+    // const frontStart = Nodule.convertEllipseAngleToPercent(
+    //   projectedEllipseData.majorAxis,
+    //   projectedEllipseData.minorAxis,
+    //   projectedEllipseData.frontStartAngle
+    // );
+
+    // const positiveZEndPercent = Nodule.convertEllipseAngleToPercent(
+    //   projectedEllipseData.majorAxis,
+    //   projectedEllipseData.minorAxis,
+    //   projectedEllipseData.frontEndAngle
+    // );
+    // Now figure out the front/BackHalfStart/End
+    // let frontStart = 0;
+    // let frontEnd = 0;
+    // let backStart = 0;
+    // let backEnd = 0;
+    // if (frontStart < SETTINGS.tolerance) {
+    //   console.log(
+    //     "start is zero and positiveZStart is less than positiveZSEnd 1"
+    //   );
+    //   frontStart = 0;
+    //   frontEnd = positiveZEndPercent;
+    //   backStart = positiveZEndPercent;
+    //   backEnd = 1;
+    // } else if (Math.abs(positiveZEndPercent - 1) < SETTINGS.tolerance) {
+    //   console.log("end is one and positiveZStart is less than positiveZSEnd 2");
+    //   backStart = 0;
+    //   backEnd = frontStart;
+    //   frontStart = frontStart;
+    //   frontEnd = 1;
+    // } else if (Math.abs(frontStart - 1) < SETTINGS.tolerance) {
+    //   console.log(
+    //     "start is one and positiveZEnd is less than positiveZStart 3"
+    //   );
+    //   backStart = 0;
+    //   backEnd = positiveZEndPercent;
+    //   frontStart = positiveZEndPercent;
+    //   frontEnd = 1;
+    // } else if (positiveZEndPercent < SETTINGS.tolerance) {
+    //   console.log("end is zero and positiveZEnd is less than positiveZStart 4");
+    //   frontStart = 0;
+    //   frontEnd = frontStart;
+    //   backStart = frontStart;
+    //   backEnd = 1;
+    // }
+
     this.frontHalf.width =
       2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
     this.frontHalf.height =
       2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
-    this.frontHalf.beginning =0 //this._normalVector.z > 0? 0.5: 0;
-    this.frontHalf.ending =0.5 //this._normalVector.z > 0? 1.0: 0.5;
+    this.frontHalf.beginning = frontStart;
+    this.frontHalf.ending = frontEnd;
     this.frontHalf.rotation = projectedEllipseData.tiltAngle;
 
     this.glowingFrontHalf.width =
       2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
     this.glowingFrontHalf.height =
       2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
-    this.glowingFrontHalf.beginning = 0; // projectedEllipseData.positiveZStartAngle;
-    this.glowingFrontHalf.ending = 0.5; //projectedEllipseData.positiveZEndAngle;
+    this.glowingFrontHalf.beginning = frontStart;
+    this.glowingFrontHalf.ending = frontEnd;
     this.glowingFrontHalf.rotation = projectedEllipseData.tiltAngle;
 
     this.backHalf.width =
       2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
     this.backHalf.height =
       2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
-    this.backHalf.beginning = 0.5//this._normalVector.z > 0? 0: 0.5;
-    this.backHalf.ending = 1 //this._normalVector.z > 0? 0.5: 1.0;
+    this.backHalf.beginning = backStart;
+    this.backHalf.ending = backEnd;
     this.backHalf.rotation = projectedEllipseData.tiltAngle;
 
     this.glowingBackHalf.width =
       2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
     this.glowingBackHalf.height =
       2 * projectedEllipseData.minorAxis * SETTINGS.boundaryCircle.radius;
-    this.glowingBackHalf.beginning = 0.5; //projectedEllipseData.positiveZEndAngle;
-    this.glowingBackHalf.ending = 1.0; //projectedEllipseData.positiveZStartAngle;
+    this.glowingBackHalf.beginning = backStart;
+    this.glowingBackHalf.ending = backEnd;
     this.glowingBackHalf.rotation = projectedEllipseData.tiltAngle;
   }
 
