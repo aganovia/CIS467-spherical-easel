@@ -189,6 +189,7 @@ declare module "two.js" {
       noStroke(): this;
       plot(): this;
       subdivide(): this;
+      getPointAt(percent: number, returnObject: Two.Vector): Two.Vector;
 
       static MakeObservable(obj: any): any;
     }
@@ -238,7 +239,7 @@ declare module "two.js" {
     }
 
     export class Circle extends Path {
-      constructor(x: number, y: number, radius: number);
+      constructor(x: number, y: number, radius: number, res?: number);
     }
 
     export class ArcSegment extends Path {
@@ -258,7 +259,7 @@ declare module "two.js" {
     }
 
     export class Group {
-      constructor();
+      constructor(...children: Two.Object[]);
 
       id: string;
       stroke: Color;
@@ -274,6 +275,7 @@ declare module "two.js" {
       children: _Object[];
       parent: Group;
       mask: Path;
+      visible: boolean;
 
       clone(): this;
       center(): this;

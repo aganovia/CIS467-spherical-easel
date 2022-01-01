@@ -89,10 +89,31 @@ export default abstract class Nodule implements Stylable, Resizeable {
       // alpha is the angle between the unitNormal and z axis
       const alpha = Math.acos(unitNormal.z);
       minorAxis = Math.sin(radius) * Math.sin(Math.abs(Math.PI / 2 - alpha)); // Math.abs(Math.PI / 2 - alpha)) is the angle between the unit normal and the plane z=0
+
+      // The tilt axis (i.e. the line containing the major axis) is perpendicular to the projection of the normal vector into the x,y plane (this explains the minus sign)
       tiltAngle =
         Math.abs(unitNormal.y) < SETTINGS.tolerance
           ? Math.PI / 2
-          : Math.atan(-unitNormal.x / unitNormal.y); // The tilt axis (i.e. the line containing the major axis) is perpendicular to the projection of the normal vector into the x,y plane (this explains the minus sign)
+          : Math.atan(-unitNormal.x / unitNormal.y);
+
+      // unit normal (=centerVector) is perpendicular to the plane of the circle/line
+      // z hat (= (0,0,1)) cross unit normal is perpendicular to the plane containing the z hat and unit normal vectors
+      // so
+      //     tmpVector = ((0,0,1) cross unit normal) cross unit normal
+      // is a vector in the direction of the line of intersection of the
+      // two planes.
+      tmpVector.set(0, 0, 1).cross(unitNormal).cross(unitNormal).normalize();
+      // tmpVector is unit vector parallel to the line of intersection between the plane of the circle and the plane containing  z hat and unit normal
+      // To make sure this points in the direction of increasing z, make the tmpVector have a positive z coordinate
+      if (tmpVector.z < 0) {
+        tmpVector.multiplyScalar(-1);
+      }
+      // To find the highest point on the circle/line (the one with the largest z value) scale tmpVector by the radius and translate it to the planar center of the circle.
+      tmpVector
+        .multiplyScalar(Math.sin(radius))
+        .addScaledVector(unitNormal, Math.cos(radius));
+      // tmpVector is now the highest point on the circle/line
+
       // Now figure out if the circle intersects the plane z=0
       if (Math.abs(radius - Math.PI / 2) < SETTINGS.tolerance) {
         //the circle is a line and must intersect z=0.
@@ -100,35 +121,24 @@ export default abstract class Nodule implements Stylable, Resizeable {
         // the normal can point in either direction so it (by itself) is a bad way to figure out the front/positive start/end angel
         // determine a point on the line that projects to the part of the ellipse that should be on the front
         // Pick the highest point, the point on the line that is furthest from the z=0 plane.
-
-        // unit normal is perpendicular to the plane of the line
-        // z hat (0,0,1) cross unit normal is perpendicular to the plane containing the z hat and N vectors
-        // so
-        //     tmpVector = ((0,0,1) cross unit normal) cross unit normal
-        // is a vector in the direction of the line of intersection of the
-        // two planes. This unit vector in the direction of tmpVector with a positive z coordinate is the hightpoint
-        tmpVector.set(0, 0, 1).cross(unitNormal).cross(unitNormal);
-        if (tmpVector.z < 0) {
-          tmpVector.multiplyScalar(-1);
-        }
-        // tmpVector is now the highest point on the line, which means that
+        // tmpVector is the highest point on the line, which means that
         // tmpVector.x, tmpVector.y is a point on the ellipse that should correspond to the front
         // this point is either above or below the line at tilt angle to the x axis (y = tan(tiltAngle)*x)
         // if above then front is from 0 to Math.PI, if below front is from Math.PI to 2*Math.PI
         if (Math.tan(tiltAngle) * tmpVector.x < tmpVector.y) {
-          console.log(
-            "the tmpVector is above the line",
-            tmpVector.x,
-            tmpVector.y
-          );
+          // console.log(
+          //   "the tmpVector is above the line",
+          //   tmpVector.x,
+          //   tmpVector.y
+          // );
           frontStartAngle = 0;
           frontEndAngle = Math.PI;
         } else {
-          console.log(
-            "the tmpVector is below the line",
-            tmpVector.x,
-            tmpVector.y
-          );
+          // console.log(
+          //   "the tmpVector is below the line",
+          //   tmpVector.x,
+          //   tmpVector.y
+          // );
           frontStartAngle = Math.PI;
           frontEndAngle = 2 * Math.PI;
         }
@@ -158,12 +168,28 @@ export default abstract class Nodule implements Stylable, Resizeable {
           // the intersection points are (X,+/-Y)
           const X = Math.cos(radius) / unitNormal.x;
           const Y = Math.sqrt(1 - X * X);
-          if (unitNormal.z > 0) {
-            frontStartAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
-            frontEndAngle = Math.atan2(-Y - centerY, X - centerX).modTwoPi();
-          } else {
+
+          // tmpVector is the highest point on the circle so
+          // tmpVector.x, tmpVector.y is a point on the ellipse that should correspond to the front
+          // in this case, this point is either to the left or right of the line x= centerX
+          if (tmpVector.x > centerX) {
+            // console.log(
+            //   "the tmpVector is right of the vertical line",
+            //   tmpVector.x,
+            //   tmpVector.y
+            // );
+            // the ellipse is traced out counterclockwise from above so start at the lower intersection point and head to the upper
             frontStartAngle = Math.atan2(-Y - centerY, X - centerX).modTwoPi();
             frontEndAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
+          } else {
+            // console.log(
+            //   "the tmpVector is left of the vertical the line",
+            //   tmpVector.x,
+            //   tmpVector.y
+            // );
+            // the ellipse is traced out counterclockwise from above so start at the upper intersection point and head to the lower
+            frontStartAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
+            frontEndAngle = Math.atan2(-Y - centerY, X - centerX).modTwoPi();
           }
         } else {
           //unitNormal.y is not zero the intersection points are those between y=mx+b (m =-unitNormal.x/unitNormal.y, b = cos(radius)/unitNormal.y ) and x^2 + y^2 =1
@@ -183,12 +209,29 @@ export default abstract class Nodule implements Stylable, Resizeable {
             Y2 - centerY,
             X2 - centerX
           ).modTwoPi();
-          if (unitNormal.z > 0) {
-            frontStartAngle = leftMostAngle;
-            frontEndAngle = rightMostAngle;
-          } else {
+          // tmpVector is the highest point on the circle so
+          // tmpVector.x, tmpVector.y is a point on the ellipse that should correspond to the front
+          // in this case, this point is either above or below the line y= Math.tan(tiltAngle)(x- centerX)+centerY
+          // if above then front is from 0 to Math.PI, if below front is from Math.PI to 2*Math.PI
+          if (
+            Math.tan(tiltAngle) * (tmpVector.x - centerX) + centerY <
+            tmpVector.y
+          ) {
+            // console.log(
+            //   "the tmpVector is above the line",
+            //   tmpVector.x,
+            //   tmpVector.y
+            // );
             frontStartAngle = rightMostAngle;
             frontEndAngle = leftMostAngle;
+          } else {
+            // console.log(
+            //   "the tmpVector is below the line",
+            //   tmpVector.x,
+            //   tmpVector.y
+            // );
+            frontStartAngle = leftMostAngle;
+            frontEndAngle = rightMostAngle;
           }
         }
       }
@@ -274,7 +317,7 @@ export default abstract class Nodule implements Stylable, Resizeable {
 
     //Now compute the arc length from 0 to tVal of the Ellipse.
     let arcLength = 0;
-    //Estimate int_0^tVal sqrt(x'(t)^2+y'(t)) dt using Simpson's rule
+    //Estimate int_0^tVal sqrt(x'(t)^2+y'(t)^2) dt using Simpson's rule
     const N = 10; // number of divisions, must be even
     const deltaX = tVal / N; // Width of each sub interval
     function f(x: number): number {

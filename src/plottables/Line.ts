@@ -71,13 +71,24 @@ export default class Line extends Nodule {
   constructor() {
     super();
 
-    this.frontHalf = new Two.Ellipse(0, 0, 50, 100, 20);
-
+    this.frontHalf = new Two.Ellipse(0, 0, 50, 100, SETTINGS.line.numPoints);
     // Create the back half, glowing front half, glowing back half circle
     // Don't clone because the resolution drops when you clone. Each ellipse needs a higher resolution than the default of 4
-    this.backHalf = new Two.Ellipse(0, 0, 50, 100, 20);
-    this.glowingBackHalf = new Two.Ellipse(0, 0, 50, 100, 20);
-    this.glowingFrontHalf = new Two.Ellipse(0, 0, 50, 100, 20);
+    this.backHalf = new Two.Ellipse(0, 0, 50, 100, SETTINGS.line.numPoints);
+    this.glowingBackHalf = new Two.Ellipse(
+      0,
+      0,
+      50,
+      100,
+      SETTINGS.line.numPoints
+    );
+    this.glowingFrontHalf = new Two.Ellipse(
+      0,
+      0,
+      50,
+      100,
+      SETTINGS.line.numPoints
+    );
 
     //Record the path ids for all the TwoJS objects which are not glowing. This is for use in IconBase to create icons.
     Nodule.idPlottableDescriptionMap.set(String(this.frontHalf.id), {
@@ -160,15 +171,6 @@ export default class Line extends Nodule {
       this._normalVector, // When the radius is pi/2, either normal vector (ie. multiply this one by -1) will result in the same data
       Math.PI / 2 // the radius of a line is always Pi/2
     );
-    //console.log(projectedEllipseData);
-    // console.log("tilt angle", projectedEllipseData.tiltAngle);
-    // console.log("start angle", projectedEllipseData.frontStartAngle);
-    // console.log("end angle", projectedEllipseData.frontEndAngle);
-    // console.log(
-    //   "2, 10, pi/4 percent",
-    //   Nodule.convertEllipseAngleToPercent(2, 10, Math.PI / 4)
-    // );
-    // console.log("unit normal z", this._normalVector.z);
 
     // no need to update the center of the ellipse because for lines it is always (0,0)
 
@@ -191,51 +193,6 @@ export default class Line extends Nodule {
       frontStart = 0.5;
       frontEnd = 1;
     }
-    // const frontStart = Nodule.convertEllipseAngleToPercent(
-    //   projectedEllipseData.majorAxis,
-    //   projectedEllipseData.minorAxis,
-    //   projectedEllipseData.frontStartAngle
-    // );
-
-    // const positiveZEndPercent = Nodule.convertEllipseAngleToPercent(
-    //   projectedEllipseData.majorAxis,
-    //   projectedEllipseData.minorAxis,
-    //   projectedEllipseData.frontEndAngle
-    // );
-    // Now figure out the front/BackHalfStart/End
-    // let frontStart = 0;
-    // let frontEnd = 0;
-    // let backStart = 0;
-    // let backEnd = 0;
-    // if (frontStart < SETTINGS.tolerance) {
-    //   console.log(
-    //     "start is zero and positiveZStart is less than positiveZSEnd 1"
-    //   );
-    //   frontStart = 0;
-    //   frontEnd = positiveZEndPercent;
-    //   backStart = positiveZEndPercent;
-    //   backEnd = 1;
-    // } else if (Math.abs(positiveZEndPercent - 1) < SETTINGS.tolerance) {
-    //   console.log("end is one and positiveZStart is less than positiveZSEnd 2");
-    //   backStart = 0;
-    //   backEnd = frontStart;
-    //   frontStart = frontStart;
-    //   frontEnd = 1;
-    // } else if (Math.abs(frontStart - 1) < SETTINGS.tolerance) {
-    //   console.log(
-    //     "start is one and positiveZEnd is less than positiveZStart 3"
-    //   );
-    //   backStart = 0;
-    //   backEnd = positiveZEndPercent;
-    //   frontStart = positiveZEndPercent;
-    //   frontEnd = 1;
-    // } else if (positiveZEndPercent < SETTINGS.tolerance) {
-    //   console.log("end is zero and positiveZEnd is less than positiveZStart 4");
-    //   frontStart = 0;
-    //   frontEnd = frontStart;
-    //   backStart = frontStart;
-    //   backEnd = 1;
-    // }
 
     this.frontHalf.width =
       2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;

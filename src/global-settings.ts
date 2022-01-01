@@ -296,7 +296,7 @@ export const SETTINGS = {
     initialLabelOffset: 0.02, // When making point labels this is initially how far (roughly) they are from the line
     defaultLabelMode: LabelDisplayMode.NameOnly, // The default way of displaying this objects label
     minimumLength: 0.045, // Don't create lines distance between the two defining point with arc length between them smaller than this (must be larger than point.hitIdealDistance because if not it is possible to create a line segment of length zero )
-    numPoints: 50, // The number of vertices used to render the line. There are this number on both the front and back parts.
+    numPoints: 20, // The number of vertices used to render the line. There are this number on both the front and back parts.
     closeEnoughToPi: 0.005, //If the angle from start to end point of this line is within this value of pi, consider it length pi, so that it is not defined by its start/end points and can be moved
     hitIdealDistance: 0.03, // The user has to be within this distance on the ideal unit sphere to select the line.
     //dynamicBackStyle is a flag that means the fill color, and stroke of the lines drawn on the back are automatically calculated based on the value of SETTINGS.contrast and their front counterparts
@@ -361,7 +361,8 @@ export const SETTINGS = {
     initialLabelOffset: 0.02, // When making point labels this is initially how far (roughly) they are from the circle
     defaultLabelMode: LabelDisplayMode.NameOnly, // The default way of displaying this objects label
     minimumRadius: 0.045, // Don't create circles with a radius smaller than this or bigger than Pi-this (must be bigger than point.hitIdealDistance to prevent almost zero radius circles at intersection points)
-    numPoints: 60, // Twice this number are used to draw the edge of the circle and 4 times this many are used to to draw the fill of the circle. These are spread over the front and back parts. MAKE THIS EVEN!
+    boundaryPoints: 40, // This number are used to draw the edge of the circle.
+    numPoints: 20, // this the number of points used to draw front (back) of the circle
     hitIdealDistance: 0.03, // The user has to be within this distance on the ideal unit sphere to select the circle.
     //dynamicBackStyle is a flag that means the fill, linewidth, and strokeColor of the circles drawn on the back are automatically calculated based on the value of SETTINGS.contrast and their front counterparts
     dynamicBackStyle: true,
