@@ -188,8 +188,12 @@ export default abstract class Nodule implements Stylable, Resizeable {
             //   tmpVector.y
             // );
             // the ellipse is traced out counterclockwise from above so start at the upper intersection point and head to the lower
-            frontStartAngle = Math.atan2(Y - centerY, X - centerX).modTwoPi();
-            frontEndAngle = Math.atan2(-Y - centerY, X - centerX).modTwoPi();
+            frontStartAngle = (
+              Math.atan2(Y - centerY, X - centerX) - tiltAngle
+            ).modTwoPi();
+            frontEndAngle = (
+              Math.atan2(-Y - centerY, X - centerX) - tiltAngle
+            ).modTwoPi();
           }
         } else {
           //unitNormal.y is not zero the intersection points are those between y=mx+b (m =-unitNormal.x/unitNormal.y, b = cos(radius)/unitNormal.y ) and x^2 + y^2 =1
@@ -201,13 +205,11 @@ export default abstract class Nodule implements Stylable, Resizeable {
           const X2 = (-m * b + Math.sqrt(m * m - b * b + 1)) / (1 + m * m);
           const Y1 = m * X1 + b;
           const Y2 = m * X2 + b;
-          const leftMostAngle = Math.atan2(
-            Y1 - centerY,
-            X1 - centerX
+          const leftMostAngle = (
+            Math.atan2(Y1 - centerY, X1 - centerX) - tiltAngle
           ).modTwoPi();
-          const rightMostAngle = Math.atan2(
-            Y2 - centerY,
-            X2 - centerX
+          const rightMostAngle = (
+            Math.atan2(Y2 - centerY, X2 - centerX) - tiltAngle
           ).modTwoPi();
           // tmpVector is the highest point on the circle so
           // tmpVector.x, tmpVector.y is a point on the ellipse that should correspond to the front

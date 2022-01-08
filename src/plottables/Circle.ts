@@ -368,9 +368,9 @@ export default class Circle extends Nodule {
       // this is because Two.js doesn't have a command like ellipse(centerX,centerY,majorAxis,minorAxis,startAngle,endAngle
       // that allows the user to draw the ellipse from startAngle to endAngle
       this.frontCirclePart.rotation =
-        projectedEllipseData.tiltAngle - Math.PI / 2; // minus pi/2 to move the start point of the beginning/ending to the lowest point (without the tilt angle) i.e. (0,-minorAxis)
+        projectedEllipseData.tiltAngle + Math.PI / 2; // minus pi/2 to move the start point of the beginning/ending to the lowest point (without the tilt angle) i.e. (0,-minorAxis)
       this.glowingFrontCirclePart.rotation =
-        projectedEllipseData.tiltAngle - Math.PI / 2;
+        projectedEllipseData.tiltAngle + Math.PI / 2;
 
       this.backCirclePart.width =
         2 * projectedEllipseData.majorAxis * SETTINGS.boundaryCircle.radius;
@@ -385,10 +385,10 @@ export default class Circle extends Nodule {
       this.backCirclePart.ending = backCircleEndPercent;
       this.glowingBackCirclePart.ending = backCircleEndPercent;
       this.backCirclePart.rotation =
-        projectedEllipseData.tiltAngle + Math.PI / 2; // plus pi/2 to move the start point of the beginning/ending to the highest point (without the tilt angle) i.e. (0,+minorAxis)
+        projectedEllipseData.tiltAngle - Math.PI / 2; // plus pi/2 to move the start point of the beginning/ending to the highest point (without the tilt angle) i.e. (0,+minorAxis)
 
       this.glowingBackCirclePart.rotation =
-        projectedEllipseData.tiltAngle + Math.PI / 2;
+        projectedEllipseData.tiltAngle - Math.PI / 2;
       // The boundaries on the circle are set, now set the edges that coincide with the boundary circle
       // first compute the angles associated with the boundary circle segment
       const frontCircleStartVector = this.frontCirclePart.getPointAt(
