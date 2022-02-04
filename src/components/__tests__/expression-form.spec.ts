@@ -65,4 +65,16 @@ describe("ExpressionForm.vue", () => {
     // console.debug("Store has", expr2, "expressions");
     expect(expr2).toEqual(expr1 + 1);
   });
+
+
+  //Testing undefined variable error
+  it("invalid input", async () => {
+    const wrapper = createComponent();
+    await wrapper.setData({text:"abcdefg "});
+    expect(wrapper).toThrow(TypeError);
+
+
+  })
+
+
 });

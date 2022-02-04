@@ -115,4 +115,70 @@ describe("SphereFrame: Segment Length Measurement Tool", () => {
     expect(yCoord.value).toBeCloseTo(pt.locationVector.y, 5);
     expect(zCoord.value).toBeCloseTo(pt.locationVector.z, 5);
   });
+
+  it("measures distance of two points", async () => {
+    const v1 = new Vector3(0, 0, 1);
+    const v2 = new Vector3(0, 0, 1);
+    v2.applyAxisAngle(new Vector3(1, 0, 0), Math.PI / 4);
+    await drawPointAt(wrapper, v1.x * R, v1.y * R);
+    await drawPointAt(wrapper, v2.x * R, v2.y * R);
+    const newPointCount = SEStore.sePoints.length;
+    expect(newPointCount).toBeGreaterThanOrEqual(2);
+    const p1: SEPoint = SEStore.sePoints[newPointCount - 2];
+    const p2: SEPoint = SEStore.sePoints[newPointCount - 1];
+    SEStore.setActionMode({
+      id: "pointDistance",
+      name: "Tool Name does not matter"
+    });
+    await wrapper.vm.$nextTick();
+    const prevMeasurementCount = SEStore.expressions.length;
+    await mouseClickOnSphere(wrapper, v1.x * R, v1.y * R);
+    await mouseClickOnSphere(wrapper, v2.x * R, v2.y * R);
+    const newMeasurementCount = SEStore.expressions.length;
+    expect(newMeasurementCount).toBe(prevMeasurementCount + 1);
+    const angle = p1.locationVector.angleTo(p2.locationVector);
+    const distance = SEStore.expressions[prevMeasurementCount] as SEExpression;
+    expect(distance.value).toBeCloseTo(angle, 5);
+  });
+
+  it("measures distance of two points", async () => {
+
+    const v1 = new Vector3(0.8,0.8,0.8)
+    const v2 = new Vector3(0.5,0.5,0.5)
+
+    v2.applyAxisAngle(v2, 30.5)
+    const newPointCount = SEStore.sePoints.length;
+
+    await drawPointAt(wrapper, v1.x * R, v1.y * R);
+    await drawPointAt(wrapper, v2.x * R, v2.y * R);
+
+    expect(newPointCount).toBeGreaterThanOrEqual(2);
+
+    const p1: SEPoint = SEStore.sePoints[newPointCount - 2];
+    const p2: SEPoint = SEStore.sePoints[newPointCount - 1];
+
+
+    SEStore.setActionMode({
+      id: "pointDistance",
+      name: "point distance tool"
+    });
+
+    await wrapper.vm.$nextTick();
+    const prevMeasurementCount = SEStore.expressions.length;
+
+    await mouseClickOnSphere(wrapper, v1.x * R, v1.y * R);
+    await mouseClickOnSphere(wrapper, v2.x * R, v2.y * R);
+
+    const newMeasurementCount = SEStore.expressions.length;
+
+    expect(newMeasurementCount).toBe(prevMeasurementCount + 1);
+
+    const angle = p1.locationVector.angleTo(p2.locationVector);
+    const distance = SEStore.expressions[prevMeasurementCount] as SEExpression;
+
+    expect(distance.value).toBeCloseTo(angle, 5);
+  })
+
+  //to do add test for other measuerments. Angle, Triangle, polygon
+
 });
