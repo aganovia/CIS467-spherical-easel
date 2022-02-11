@@ -12,6 +12,8 @@ import {
 import { SEPoint } from "@/models/SEPoint";
 import { Vector3 } from "three";
 import { SEExpression } from "@/models/SEExpression";
+
+
 const R = SETTINGS.boundaryCircle.radius;
 
 describe("SphereFrame: Segment Length Measurement Tool", () => {
@@ -116,69 +118,84 @@ describe("SphereFrame: Segment Length Measurement Tool", () => {
     expect(zCoord.value).toBeCloseTo(pt.locationVector.z, 5);
   });
 
-  it("measures distance of two points", async () => {
-    const v1 = new Vector3(0, 0, 1);
-    const v2 = new Vector3(0, 0, 1);
-    v2.applyAxisAngle(new Vector3(1, 0, 0), Math.PI / 4);
+
+
+  it("measuring angles", async () => {
+    // const v1 = new Vector3(-0.174,0.553,0.815);
+    // const v2 = new Vector3(0.397,0.158,0.904);
+    // const v3 = new Vector3(-0.096,-0.170,0.981);
+
+    const v1 = new Vector3(-0.532,0.241,0.812);
+    const v2 = new Vector3(0.059,0.313,0.948);
+    const v3 = new Vector3(-0.065,-0.270,0.961);
+
     await drawPointAt(wrapper, v1.x * R, v1.y * R);
     await drawPointAt(wrapper, v2.x * R, v2.y * R);
+    await drawPointAt(wrapper, v3.x * R, v3.y * R);
+
     const newPointCount = SEStore.sePoints.length;
-    expect(newPointCount).toBeGreaterThanOrEqual(2);
-    const p1: SEPoint = SEStore.sePoints[newPointCount - 2];
-    const p2: SEPoint = SEStore.sePoints[newPointCount - 1];
+    expect(newPointCount).toBeGreaterThanOrEqual(3);
+    const p1: SEPoint = SEStore.sePoints[newPointCount - 3];
+    const p2: SEPoint = SEStore.sePoints[newPointCount - 2];
+    const p3: SEPoint = SEStore.sePoints[newPointCount - 1];
+
     SEStore.setActionMode({
-      id: "pointDistance",
+      id: "angle",
       name: "Tool Name does not matter"
     });
     await wrapper.vm.$nextTick();
     const prevMeasurementCount = SEStore.expressions.length;
     await mouseClickOnSphere(wrapper, v1.x * R, v1.y * R);
     await mouseClickOnSphere(wrapper, v2.x * R, v2.y * R);
-    const newMeasurementCount = SEStore.expressions.length;
-    expect(newMeasurementCount).toBe(prevMeasurementCount + 1);
-    const angle = p1.locationVector.angleTo(p2.locationVector);
-    const distance = SEStore.expressions[prevMeasurementCount] as SEExpression;
-    expect(distance.value).toBeCloseTo(angle, 5);
+    await mouseClickOnSphere(wrapper, v3.x * R, v3.y * R);
+
+
+    const angle = (p1.locationVector.angleTo(p2.locationVector) + p2.locationVector.angleTo(p3.locationVector))
+
+    expect(angle.toDegrees()).toBeCloseTo(74.258, -2);
+    console.log("Expected: 90 Got ...\t")
+
   });
 
-  it("measures distance of two points", async () => {
 
-    const v1 = new Vector3(0.8,0.8,0.8)
-    const v2 = new Vector3(0.5,0.5,0.5)
-
-    v2.applyAxisAngle(v2, 30.5)
-    const newPointCount = SEStore.sePoints.length;
-
-    await drawPointAt(wrapper, v1.x * R, v1.y * R);
-    await drawPointAt(wrapper, v2.x * R, v2.y * R);
-
-    expect(newPointCount).toBeGreaterThanOrEqual(2);
-
-    const p1: SEPoint = SEStore.sePoints[newPointCount - 2];
-    const p2: SEPoint = SEStore.sePoints[newPointCount - 1];
+//// TRIANGLE ANGLE///////
 
 
-    SEStore.setActionMode({
-      id: "pointDistance",
-      name: "point distance tool"
-    });
+// it("measures triangle sides", async () => {
+//        const v1 = new Vector3(-0.174,0.553,0.815);
+//        const v2 = new Vector3(0.397,0.158,0.904);
+//        const v3 = new Vector3(-0.096,-0.170,0.981);
 
-    await wrapper.vm.$nextTick();
-    const prevMeasurementCount = SEStore.expressions.length;
-
-    await mouseClickOnSphere(wrapper, v1.x * R, v1.y * R);
-    await mouseClickOnSphere(wrapper, v2.x * R, v2.y * R);
-
-    const newMeasurementCount = SEStore.expressions.length;
-
-    expect(newMeasurementCount).toBe(prevMeasurementCount + 1);
-
-    const angle = p1.locationVector.angleTo(p2.locationVector);
-    const distance = SEStore.expressions[prevMeasurementCount] as SEExpression;
-
-    expect(distance.value).toBeCloseTo(angle, 5);
-  })
-
-  //to do add test for other measuerments. Angle, Triangle, polygon
+//   const prevSegmentCount = SEStore.seSegments.length;
+//   await drawOneDimensional(
+//     wrapper,
+//     "segment",
+//     v1.x * R,
+//     v1.y * R,
+//     true,
+//     v2.x * R,
+//     v2.y * R,
+//     true
+//   );
+//   await drawOneDimensional(
+//     wrapper,
+//     "segment",
+//     v1.x * R,
+//     v1.y * R,
+//     true,
+//     v3.x * R,
+//     v3.y * R,
+//     true
+//   );
+//   await drawOneDimensional(
+//     wrapper,
+//     "segment",
+//     v3.x * R,
+//     v3.y * R,
+//     true,
+//     v2.x * R,
+//     v2.y * R,
+//     true
+//   );
 
 });
