@@ -119,8 +119,9 @@ describe("SphereFrame: Segment Length Measurement Tool", () => {
   });
 
 
-
-  it("measuring angles", async () => {
+// Need to work on using the angle handler to verify measurements. This creates 3 points
+// on the easel. The angle handler needs to be implemented.
+  xit("measuring angles", async () => {
     // const v1 = new Vector3(-0.174,0.553,0.815);
     // const v2 = new Vector3(0.397,0.158,0.904);
     // const v3 = new Vector3(-0.096,-0.170,0.981);
@@ -159,9 +160,10 @@ describe("SphereFrame: Segment Length Measurement Tool", () => {
 
 
 //// TRIANGLE ANGLE///////
+///Not finished need to calculate angle measurements first.
 
 
-// it("measures triangle sides", async () => {
+// xit("measures triangle sides", async () => {
 //        const v1 = new Vector3(-0.174,0.553,0.815);
 //        const v2 = new Vector3(0.397,0.158,0.904);
 //        const v3 = new Vector3(-0.096,-0.170,0.981);
