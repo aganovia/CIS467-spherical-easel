@@ -249,6 +249,7 @@ import { Matrix4 } from "three";
 import { SEStore, ACStore } from "./store";
 import { detect } from "detect-browser";
 import FileSaver from "file-saver";
+import d3ToPng from "d3-svg-to-png";
 // import { gzip } from "node-gzip";
 
 //#region vuex-module-namespace
@@ -427,7 +428,7 @@ export default class App extends Vue {
     this.$refs.shareConstructionDialog.hide();
     this.$refs.exportConstructionDialog.show();
   }
-  
+
   doExportButton(): void {
     this.$refs.exportConstructionDialog.hide();
 
@@ -442,7 +443,10 @@ export default class App extends Vue {
       FileSaver.saveAs(svgURL, "construction.svg");
       console.log("SVG exported");
     } else if (this.selectedFormat == "PNG") {
-      console.log("PNG exported");
+
+        var png = d3ToPng('#canvas svg', 'name');
+
+        console.log("PNG exported");
     } else if (this.selectedFormat == "GIF") {
       console.log("GIF exported");
     }
