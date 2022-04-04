@@ -324,6 +324,7 @@ export default class SphereFrame extends VueComponent {
     SEStore.setSphereRadius(radius);
 
     const ratio = radius / SETTINGS.boundaryCircle.radius;
+    console.log("ratio from frame.vue: "+ratio)
     SEStore.setZoomMagnificationFactor(ratio);
     // Each window size gets its own zoom matrix
     // When you resize a window the zoom resets

@@ -269,6 +269,7 @@ import { SEStore, ACStore } from "./store";
 import { detect } from "detect-browser";
 import FileSaver from "file-saver";
 import d3ToPng from "d3-svg-to-png";
+import SETTINGS, { LAYER } from "@/global-settings";
 // import { gzip } from "node-gzip";
 
 //#region vuex-module-namespace
@@ -492,11 +493,16 @@ export default class App extends Vue {
 
       //set the view of the image to be around the circle
       //linear equation determined by comparing "console.log(currentWidth);" with successfull hard codes
-      svgElement.setAttribute("viewBox", (.476*(currentWidth)-348.57)+" "+(.476*(currentWidth)-348.57)+" 733 733");
+      const radius = currentWidth / 2 - 16;
+      const ratio = radius / SETTINGS.boundaryCircle.radius;
+      console.log("ratio from app.vue: "+ratio)
+      console.log("x translation: "+ SEStore.zoomTranslation[0])
+      console.log("y translation: "+ SEStore.zoomTranslation[1])
+      svgElement.setAttribute("viewBox", ((.476*(currentWidth)-348.57)-SEStore.zoomTranslation[0])+" "+((.476*(currentWidth)-348.57)-SEStore.zoomTranslation[1])+" "+733/SEStore.zoomMagnificationFactor*ratio+" "+733/SEStore.zoomMagnificationFactor*ratio);
 
       //remove the transform so the circle shows up
       //DISCLAIMER: This code is only relevant for viewing the svg fully in browser. The exported svg works without removing css styling.
-      //svgElement.style.removeProperty("transform");
+      svgElement.style.removeProperty("transform");
 
       //create blob and url, then call filesaver
       const svgBlob = new Blob([svgElement.outerHTML], {
