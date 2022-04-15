@@ -444,7 +444,6 @@ export default class App extends Vue {
     const canvasReference = document.querySelector("#canvas") as HTMLDivElement;
     const currentWidth = canvasReference.clientWidth;
     var adjustedZoomFactor = (SEStore.zoomMagnificationFactor*500)/SEStore.canvasWidth
-    SEStore.zoomTranslation
     svgElement.setAttribute("viewBox", (.476*(currentWidth)-348.57-SEStore.zoomTranslation[0])+" "+(.476*(currentWidth)-348.57-SEStore.zoomTranslation[1])+" "+733/adjustedZoomFactor+" "+733/adjustedZoomFactor);
     svgElement.setAttribute("height", "400px");
     svgElement.setAttribute("width", "400px");
