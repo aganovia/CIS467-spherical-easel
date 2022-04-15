@@ -443,7 +443,9 @@ export default class App extends Vue {
     svgElement.style.removeProperty("transform");
     const canvasReference = document.querySelector("#canvas") as HTMLDivElement;
     const currentWidth = canvasReference.clientWidth;
-    svgElement.setAttribute("viewBox", (.476*(currentWidth)-348.57)+" "+(.476*(currentWidth)-348.57)+" 733 733");
+    var adjustedZoomFactor = (SEStore.zoomMagnificationFactor*500)/SEStore.canvasWidth
+    SEStore.zoomTranslation
+    svgElement.setAttribute("viewBox", (.476*(currentWidth)-348.57-SEStore.zoomTranslation[0])+" "+(.476*(currentWidth)-348.57-SEStore.zoomTranslation[1])+" "+733/adjustedZoomFactor+" "+733/adjustedZoomFactor);
     svgElement.setAttribute("height", "400px");
     svgElement.setAttribute("width", "400px");
     const svgBlob = new Blob([svgElement.outerHTML], {
@@ -550,7 +552,10 @@ export default class App extends Vue {
 
         //set the view of the image to be around the circle
         //linear equation determined by comparing "console.log(currentWidth);" with successfull hard codes
+        //var adjustedZoomFactor = (SEStore.zoomMagnificationFactor*500)/SEStore.canvasWidth
+
         clone.setAttribute("viewBox", (.476*(currentWidth)-348.57)+" "+(.476*(currentWidth)-348.57)+" 733 733");
+        //clone.setAttribute("viewBox", (.476*(currentWidth)-348.57)+" "+(.476*(currentWidth)-348.57)+" "+500+" "+500);
 
         //since d3ToPng exports the png as it appears in browser, we must remove the transform
         clone.style.removeProperty("transform");
